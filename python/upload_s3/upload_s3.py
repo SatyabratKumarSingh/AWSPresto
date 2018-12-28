@@ -1,24 +1,21 @@
 import boto3, os
 import progressbar
 
-bucket_name = "sat-001-insurance-csv"
-file_path = '/Users/satya/PycharmProjects/python_presto/resources/insurance_sample.csv'
 
-AWS_ACCESS_KEY_ID = ""
-AWS_SECRET_ACCESS_KEY = ""
+class S3Uploader:
 
-s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+    def __init__(self, aws_access_key, aws_access_secret_key):
+        self.s3_client = boto3.client('s3', aws_access_key_id=aws_access_key,
+                          aws_secret_access_key=aws_access_secret_key)
 
-statinfo = os.stat(file_path)
+    def upload(self, file_path, bucket_name):
+        stats_info = os.stat(file_path)
+        self.progress_bar = progressbar.progressbar.ProgressBar(maxval=stats_info.st_size)
+        self.progress_bar.start()
+        self.s3_client.upload_file(file_path, bucket_name, os.path.basename(file_path)
+                       , Callback=self.upload_progress)
+        self.progress_bar.finish()
 
-up_progress = progressbar.progressbar.ProgressBar(maxval=statinfo.st_size)
+    def upload_progress(self,chunk):
+        self.progress_bar.update(self.progress_bar.currval + chunk)
 
-up_progress.start()
-
-def upload_progress(chunk):
-    up_progress.update(up_progress.currval + chunk)
-
-s3.upload_file(file_path, bucket_name, os.path.basename(file_path)
-, Callback=upload_progress)
-
-up_progress.finish()
